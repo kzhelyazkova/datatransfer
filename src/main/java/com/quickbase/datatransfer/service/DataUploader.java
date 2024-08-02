@@ -5,6 +5,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
-public interface DataDownloader<T extends DataDTO> extends TransfererTypeChecker {
-    Mono<T> downloadData(Map<String, String> params);
+public interface DataUploader<T extends DataDTO> extends TransfererTypeChecker {
+    Mono<Void> uploadData(Map<String, String> params, T data);
 }

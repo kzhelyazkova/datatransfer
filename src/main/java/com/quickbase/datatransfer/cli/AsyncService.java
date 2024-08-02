@@ -18,14 +18,15 @@ public class AsyncService {
         }
         return Mono.just("Task Completed!");*/
 
-        return Mono.fromCallable(() -> {
-            System.out.println("Simulate a long-running task");
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            return "Task Completed!";
-        });
+        return Mono.just("tralala")
+                .map(str -> {
+                    System.out.println("Simulate a long-running task");
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return "Task Completed!";
+                });
     }
 }

@@ -34,6 +34,7 @@ public class DataTransferCLI {
         this.dataTransferService = dataTransferService;
     }
 
+    @Async
     //@ShellMethod("Execute a task asynchronously")
     @Command(command = "user")
     public void asyncCommand(@Option(longNames = {"source-system"}, required = true) String sourceSystem,
@@ -53,7 +54,14 @@ public class DataTransferCLI {
                         .collect(Collectors.joining(", ", "{", "}")));
         terminal.writer().flush();
 
-        dataTransferService.transferData(sourceSystem, destinationSystem, "user", sourceParamsMap, destParamsMap);
+        dataTransferService.transferData(sourceSystem, destinationSystem, "user", sourceParamsMap, destParamsMap).block();
+                /*.subscribe(result -> {
+                    terminal.writer().println(result);
+                    terminal.writer().println("Completed user data transfer successfully!");
+                    terminal.writer().flush();
+                });*/
+        terminal.writer().println("Completed user data transfer successfully!");
+        terminal.writer().flush();
 
         /*asyncService.performAsyncTask()
                 .subscribe(result -> {
