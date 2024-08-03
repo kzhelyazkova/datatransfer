@@ -1,57 +1,24 @@
 package com.quickbase.datatransfer.service;
 
-import com.quickbase.datatransfer.dto.DataDTO;
-import com.quickbase.datatransfer.dto.UserDataDTO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import com.quickbase.datatransfer.common.DataType;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 
-
-@Service
-public class DataTransferService {
-    private final List<DataDownloader<? extends DataDTO>> dataDownloaders;
-    private final List<DataUploader<? extends DataDTO>> dataUploaders;
-
-    @Autowired
-    public DataTransferService(List<DataDownloader<? extends DataDTO>> dataDownloaders,
-                               List<DataUploader<? extends DataDTO>> dataUploaders) {
-        this.dataDownloaders = dataDownloaders;
-        this.dataUploaders = dataUploaders;
-        System.out.println("data downloaders: " + dataDownloaders);
-        System.out.println("data uploaders: " + dataUploaders);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Mono<Void> transferData(String sourceSystemType, String destSystemType, String dataType,
-                             Map<String, String> sourceParams, Map<String, String> destParams) {
-        DataDownloader<? extends DataDTO> sourceSystemDataDownloader = findDataTransferer(dataDownloaders, sourceSystemType, dataType);
-        System.out.println("data downloader: " + sourceSystemDataDownloader);
-
-        Mono<? extends DataDTO> dataForTransfer = sourceSystemDataDownloader.downloadData(sourceParams);
-        System.out.println("downloaded data: " + dataForTransfer);
-        // System.out.println("downloaded data username: " + ((UserDataDTO) dataForTransfer).username);
-
-        DataUploader<DataDTO> destSystemDataUploader = (DataUploader<DataDTO>) findDataTransferer(dataUploaders, destSystemType, dataType);
-        System.out.println("data uploader: " + destSystemDataUploader);
-        return dataForTransfer
-                .flatMap(downloadedData -> destSystemDataUploader.uploadData(destParams, downloadedData));
-    }
-
-    private <T extends TransfererTypeChecker> T findDataTransferer(List<T> dataTransferers, String systemType, String dataType) {
-        List<T> systemDataTransferers = dataTransferers.stream()
-                .filter(transferer -> transferer.systemTypeMatches(systemType))
-                .toList();
-
-        if (systemDataTransferers.isEmpty()) {
-            throw new RuntimeException("Unsupported external system type: " + systemType);
-        }
-
-        return systemDataTransferers.stream()
-                .filter(downloader -> downloader.dataTypeMatches(dataType))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Unsupported data type: " + dataType + " for external system: " + systemType));
-    }
+public interface DataTransferService {
+    /**
+     * Transfers data from one external system to another.
+     * <p/>
+     * Downloads data from the desired data type from one external system, transforms it to a data format which the
+     * other system recognizes and uploads it to the other system. What data should be downloaded/uploaded is based
+     * on the specified source/dest params.
+     *
+     * @param sourceSystemType The type of system data would be downloaded from
+     * @param destSystemType The type of system data would be uploaded to
+     * @param dataType The type of data to be transferred
+     * @param sourceParams The params identifying the data to be downloaded from the source system
+     * @param destParams The params identifying the data to be uploaded to the destination system
+     */
+    Mono<Void> transferData(String sourceSystemType, String destSystemType, DataType dataType,
+                            Map<String, String> sourceParams, Map<String, String> destParams);
 }
