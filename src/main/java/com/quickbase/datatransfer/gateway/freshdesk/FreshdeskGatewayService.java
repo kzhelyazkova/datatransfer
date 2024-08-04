@@ -28,12 +28,12 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class FreshdeskGatewayService {
+    public static final String DOMAIN_PARAM = "domain";
+    public static final String EXTERNAL_SYSTEM_NAME = "Freshdesk";
+    public static final String CONTACTS_API_PATH = "/api/v2/contacts";
+    public static final String SEARCH_CONTACTS_API_PATH = CONTACTS_API_PATH + "/autocomplete?term=";
     private static final String FRESHDESK_API_BASE_URL_FORMAT = "https://%s.freshdesk.com";
     private static final String AUTH_TOKEN = "FRESHDESK_TOKEN";
-    private static final String DOMAIN_PARAM = "domain";
-    private static final String CONTACTS_API_PATH = "/api/v2/contacts";
-    private static final String SEARCH_CONTACTS_API_PATH = CONTACTS_API_PATH + "/autocomplete?term=";
-    private static final String EXTERNAL_SYSTEM_NAME = "Freshdesk";
 
     public static abstract class FreshdeskDataProcessorBase implements TransferrerTypeChecker {
         private final ConfigPropertyProvider configPropertyProvider;
@@ -128,6 +128,8 @@ public class FreshdeskGatewayService {
                         if (!contacts.isEmpty()) {
                             log.info("Found {} Freshdesk contact(s) matching name '{}': {}",
                                     contacts.size(), name, contacts);
+                        } else {
+                            log.info("Found no Freshdesk contacts matching name '{}'", name);
                         }
                     })
                     .doOnError(ex -> log.error("Searching for Freshdesk contacts by search term '{}' failed:",

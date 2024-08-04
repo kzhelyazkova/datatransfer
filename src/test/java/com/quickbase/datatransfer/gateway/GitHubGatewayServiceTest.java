@@ -14,6 +14,7 @@ import com.quickbase.datatransfer.dto.UserDTO;
 import com.quickbase.datatransfer.exception.HttpRequestFailedException;
 import com.quickbase.datatransfer.exception.MissingExternalSystemParamException;
 import com.quickbase.datatransfer.exception.UnauthorizedOperationException;
+import com.quickbase.datatransfer.gateway.github.GitHubGatewayService.UserDataDownloader;
 import com.quickbase.datatransfer.gateway.github.model.GitHubUser;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,8 +28,6 @@ import reactor.test.StepVerifier;
 
 import java.util.Collections;
 import java.util.Map;
-
-import static com.quickbase.datatransfer.gateway.github.GitHubGatewayService.UserDataDownloader;
 
 public class GitHubGatewayServiceTest extends GatewayTestBase {
     @SpyBean
@@ -60,15 +59,17 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
                                 .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                                 .withBody(Json.write(gitHubUser))));
 
-        UserDTO downloadedData = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, username))
-                .doOnError(ex -> fail("Error occurred while obtaining GitHub user: " + ex.getMessage()))
-                .block();
+        Mono<UserDTO> resultMono = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, username));
 
-        assertNotNull(downloadedData);
-        assertEquals(gitHubUser.name, downloadedData.name);
-        assertEquals(gitHubUser.company, downloadedData.company);
-        assertEquals(gitHubUser.email, downloadedData.email);
-        assertEquals(gitHubUser.location, downloadedData.address);
+        StepVerifier.create(resultMono)
+                .assertNext(downloadedData -> {
+                    assertNotNull(downloadedData);
+                    assertEquals(gitHubUser.name, downloadedData.name);
+                    assertEquals(gitHubUser.company, downloadedData.company);
+                    assertEquals(gitHubUser.email, downloadedData.email);
+                    assertEquals(gitHubUser.location, downloadedData.address);
+                })
+                .verifyComplete();
     }
 
     @Test
