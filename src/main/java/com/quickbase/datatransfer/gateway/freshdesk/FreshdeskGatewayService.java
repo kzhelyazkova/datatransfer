@@ -1,10 +1,8 @@
 package com.quickbase.datatransfer.gateway.freshdesk;
 
+import com.quickbase.datatransfer.common.ConfigPropertyProvider;
 import com.quickbase.datatransfer.dto.UserDTO;
-import com.quickbase.datatransfer.exception.AmbiguousDataException;
-import com.quickbase.datatransfer.exception.HttpRequestFailedException;
-import com.quickbase.datatransfer.exception.InvalidDataException;
-import com.quickbase.datatransfer.exception.MissingExternalSystemParamException;
+import com.quickbase.datatransfer.exception.*;
 import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContact;
 import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContactRequestBody;
 import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskErrorResponse;
@@ -15,6 +13,7 @@ import com.quickbase.datatransfer.service.DataUploader;
 import com.quickbase.datatransfer.service.TransferrerTypeChecker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -30,28 +29,62 @@ import java.util.stream.Collectors;
 @Slf4j
 public class FreshdeskGatewayService {
     private static final String FRESHDESK_API_BASE_URL_FORMAT = "https://%s.freshdesk.com";
-    private static final String AUTH_TOKEN_ENV_VAR = "FRESHDESK_TOKEN";
+    private static final String AUTH_TOKEN = "FRESHDESK_TOKEN";
     private static final String DOMAIN_PARAM = "domain";
     private static final String CONTACTS_API_PATH = "/api/v2/contacts";
     private static final String SEARCH_CONTACTS_API_PATH = CONTACTS_API_PATH + "/autocomplete?term=";
     private static final String EXTERNAL_SYSTEM_NAME = "Freshdesk";
 
-    public static abstract class FreshdeskTypeChecker implements TransferrerTypeChecker {
+    public static abstract class FreshdeskDataProcessorBase implements TransferrerTypeChecker {
+        private final ConfigPropertyProvider configPropertyProvider;
+
+        protected FreshdeskDataProcessorBase(ConfigPropertyProvider configPropertyProvider) {
+            this.configPropertyProvider = configPropertyProvider;
+        }
+
         @Override
         public boolean systemTypeMatches(String systemType) {
             return isFreshdeskSystemType(systemType);
         }
+
+        public String getApiBaseUrl(String freshdeskDomain) {
+            return getFreshdeskApiBaseUrl(freshdeskDomain);
+        }
+
+        protected String getAuthToken() {
+            String authToken = configPropertyProvider.getConfigPropertyValue(AUTH_TOKEN);
+
+            if (authToken == null) {
+                throw new UnauthorizedOperationException(
+                        String.format("Please set '%s' (as %s) to your base64-encoded Freshdesk API token in order to authenticate.",
+                                AUTH_TOKEN, configPropertyProvider.getConfigPropertyType()),
+                        EXTERNAL_SYSTEM_NAME);
+            }
+
+            return authToken;
+        }
     }
 
     @Service
-    public static class UserDataUploader extends FreshdeskTypeChecker implements DataUploader<UserDTO> {
+    public static class UserDataUploader extends FreshdeskDataProcessorBase implements DataUploader<UserDTO> {
+        @Autowired
+        protected UserDataUploader(ConfigPropertyProvider configPropertyProvider) {
+            super(configPropertyProvider);
+        }
+
         @Override
         public Mono<Void> uploadData(Map<String, String> params, UserDTO data) {
             if (data == null || Strings.isBlank(data.name)) {
                 return Mono.error(new InvalidDataException("Can't create/update Freshdesk contact: missing name in data for upload."));
             }
 
-            return Mono.fromCallable(() -> createWebClient(params))
+            return Mono.fromCallable(() -> {
+                        String freshdeskDomain = getDomain(params);
+                        String baseUrl = getApiBaseUrl(freshdeskDomain);
+                        String authToken = getAuthToken();
+
+                        return createWebClient(baseUrl, authToken);
+                    })
                     .flatMap(webClient -> searchContactsByName(webClient, data.name)
                             .flatMap(contacts -> {
                                 if (contacts.size() > 1) {
@@ -147,17 +180,10 @@ public class FreshdeskGatewayService {
         return EXTERNAL_SYSTEM_NAME.equalsIgnoreCase(systemType);
     }
 
-    private static WebClient createWebClient(Map<String, String> params) {
-        String freshdeskDomain = getDomain(params);
-        String authorizationToken = WebUtils.getAuthToken(AUTH_TOKEN_ENV_VAR,
-                String.format(
-                        "Please set '%s' env var to your base64-encoded Freshdesk API token in order to authenticate.",
-                        AUTH_TOKEN_ENV_VAR),
-                EXTERNAL_SYSTEM_NAME);
-
-        return WebClient.create(String.format(FRESHDESK_API_BASE_URL_FORMAT, freshdeskDomain))
+    private static WebClient createWebClient(String baseUrl, String authToken) {
+        return WebClient.create(baseUrl)
                 .mutate()
-                .defaultHeader(HttpHeaders.AUTHORIZATION, authorizationToken)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, authToken)
                 .build();
     }
 
@@ -214,5 +240,9 @@ public class FreshdeskGatewayService {
         }
 
         return sb.toString();
+    }
+
+    private static String getFreshdeskApiBaseUrl(String freshdeskDomain) {
+        return String.format(FRESHDESK_API_BASE_URL_FORMAT, freshdeskDomain);
     }
 }

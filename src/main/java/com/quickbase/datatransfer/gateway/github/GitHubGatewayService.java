@@ -1,7 +1,9 @@
 package com.quickbase.datatransfer.gateway.github;
 
+import com.quickbase.datatransfer.common.ConfigPropertyProvider;
 import com.quickbase.datatransfer.dto.UserDTO;
 import com.quickbase.datatransfer.exception.MissingExternalSystemParamException;
+import com.quickbase.datatransfer.exception.UnauthorizedOperationException;
 import com.quickbase.datatransfer.gateway.github.model.GitHubUser;
 import com.quickbase.datatransfer.gateway.util.WebUtils;
 import com.quickbase.datatransfer.common.DataType;
@@ -9,6 +11,7 @@ import com.quickbase.datatransfer.service.DataDownloader;
 import com.quickbase.datatransfer.service.DataTypeToDtoMatcher;
 import com.quickbase.datatransfer.service.TransferrerTypeChecker;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,22 +22,50 @@ import java.util.Map;
 
 @Slf4j
 public class GitHubGatewayService {
+    public static final String EXTERNAL_SYSTEM_NAME = "GitHub";
     private static final String GITHUB_API_BASE_URL = "https://api.github.com";
-    private static final String AUTH_TOKEN_ENV_VAR = "GITHUB_TOKEN";
+    private static final String AUTH_TOKEN = "GITHUB_TOKEN";
     private static final String ACCEPT_HEADER_VALUE = "application/vnd.github+json";
-    private static final String EXTERNAL_SYSTEM_NAME = "GitHub";
     private static final String USER_API_PATH = "/users";
 
-    public static abstract class GitHubTypeChecker implements TransferrerTypeChecker {
+    public static abstract class GitHubDataProcessorBase implements TransferrerTypeChecker {
+        private final ConfigPropertyProvider configPropertyProvider;
+
+        public GitHubDataProcessorBase(ConfigPropertyProvider configPropertyProvider) {
+            this.configPropertyProvider = configPropertyProvider;
+        }
+
         @Override
         public boolean systemTypeMatches(String systemType) {
             return isGitHubSystemType(systemType);
         }
+
+        public String getApiBaseUrl() {
+            return getGitHubApiBaseUrl();
+        }
+
+        protected String getAuthToken() {
+            String authToken = configPropertyProvider.getConfigPropertyValue(AUTH_TOKEN);
+
+            if (authToken == null) {
+                throw new UnauthorizedOperationException(
+                        String.format("Please set '%s' (as %s) to your GitHub API token in order to authenticate.",
+                                AUTH_TOKEN, configPropertyProvider.getConfigPropertyType()),
+                        EXTERNAL_SYSTEM_NAME);
+            }
+
+            return authToken;
+        }
     }
 
     @Service
-    public static class UserDataDownloader extends GitHubTypeChecker implements DataDownloader<UserDTO> {
-        private static final String USERNAME_PARAM = "username";
+    public static class UserDataDownloader extends GitHubDataProcessorBase implements DataDownloader<UserDTO> {
+        public static final String USERNAME_PARAM = "username";
+
+        @Autowired
+        public UserDataDownloader(ConfigPropertyProvider configPropertyProvider) {
+            super(configPropertyProvider);
+        }
 
         @Override
         public Mono<UserDTO> downloadData(Map<String, String> params) {
@@ -50,7 +81,9 @@ public class GitHubGatewayService {
         private Mono<GitHubUser> downloadUserData(Map<String, String> params) {
             return Mono.fromCallable(() -> getUsername(params))
                     .flatMap(username -> {
-                        WebClient webClient = createWebClient();
+                        String baseApiUrl = getApiBaseUrl();
+                        String authToken = getAuthToken();
+                        WebClient webClient = createWebClient(baseApiUrl, authToken);
 
                         log.info("Getting GitHub user with username '{}'", username);
 
@@ -96,14 +129,12 @@ public class GitHubGatewayService {
         return EXTERNAL_SYSTEM_NAME.equalsIgnoreCase(systemType);
     }
 
-    private static WebClient createWebClient() {
-        String authToken = WebUtils.getAuthToken(AUTH_TOKEN_ENV_VAR,
-                String.format(
-                        "Please set '%s' env var to your GitHub API token in order to authenticate.",
-                        AUTH_TOKEN_ENV_VAR),
-                EXTERNAL_SYSTEM_NAME);
+    private static String getGitHubApiBaseUrl() {
+        return GITHUB_API_BASE_URL;
+    }
 
-        return WebClient.create(GITHUB_API_BASE_URL)
+    private static WebClient createWebClient(String baseUrl, String authToken) {
+        return WebClient.create(baseUrl)
                 .mutate()
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + authToken)
                 .defaultHeader(HttpHeaders.ACCEPT, ACCEPT_HEADER_VALUE)
