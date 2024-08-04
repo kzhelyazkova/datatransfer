@@ -4,7 +4,6 @@ import static com.quickbase.datatransfer.gateway.github.GitHubGatewayService.EXT
 import static com.quickbase.datatransfer.gateway.github.GitHubGatewayService.UserDataDownloader.USERNAME_PARAM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.client.WireMock;

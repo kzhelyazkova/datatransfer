@@ -4,19 +4,21 @@ import com.quickbase.datatransfer.cli.exceptionresolving.CustomCommandExceptionR
 import com.quickbase.datatransfer.cli.util.CommandUtils;
 import com.quickbase.datatransfer.common.DataType;
 import com.quickbase.datatransfer.service.DataTransferService;
+import jakarta.validation.constraints.NotBlank;
 import org.jline.terminal.Terminal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
 import static org.springframework.shell.command.CommandRegistration.*;
 
 @Component
-@Command(command = "transfer")
+@Command(command = "transfer", group = "Data Transfer")
 public class DataTransferCLI extends CustomCommandExceptionResolver {
     private final Terminal terminal;
     private final DataTransferService dataTransferService;
@@ -28,15 +30,21 @@ public class DataTransferCLI extends CustomCommandExceptionResolver {
     }
 
     @Async
-    @Command(command = "user")
+    @Command(command = "user", description = "Transfer data for a specified user from one external system to another")
     public void transferUser(
-            @Option(longNames = {"source-system"}, required = true, arity = OptionArity.EXACTLY_ONE)
+            @NotBlank
+            @Option(longNames = {"source-system"}, shortNames = {'s'}, required = true, arity = OptionArity.EXACTLY_ONE,
+                    description = "External system from which data will be retrieved. Currently supported: GitHub")
             String sourceSystem,
-            @Option(longNames = {"destination-system"}, required = true, arity = OptionArity.EXACTLY_ONE)
+            @NotBlank
+            @Option(longNames = {"destination-system"}, shortNames = {'d'}, required = true, arity = OptionArity.EXACTLY_ONE,
+                    description = "External system to which data will be transferred. Currently supported: Freshdesk")
             String destinationSystem,
-            @Option(longNames = {"source-params"}, arity = OptionArity.ONE_OR_MORE)
+            @Option(longNames = {"source-params"}, shortNames = {'p'}, arity = OptionArity.ONE_OR_MORE,
+                    description = "Parameters identifying the user for which data will be retrieved from the source system")
             String[] sourceParams,
-            @Option(longNames = {"destination-params"}, arity = OptionArity.ONE_OR_MORE)
+            @Option(longNames = {"destination-params"}, shortNames = {'t'}, arity = OptionArity.ONE_OR_MORE,
+                    description = "Parameters identifying where to upload the user data in the destination system")
             String[] destinationParams) {
         Map<String, String> sourceParamsMap = CommandUtils.convertArrayParamsToMap(sourceParams);
         Map<String, String> destParamsMap = CommandUtils.convertArrayParamsToMap(destinationParams);
