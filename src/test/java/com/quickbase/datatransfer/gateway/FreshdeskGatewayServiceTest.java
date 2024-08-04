@@ -231,9 +231,11 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
     private static UserDTO buildUser() {
         UserDTO user = new UserDTO();
         user.name = "John Smith";
-        user.company = "BlueSKy";
         user.email = "jsmith@bluesky.com";
         user.address = "Arizona, US";
+        user.twitterHandle= "johnnys";
+        user.description = "A cat lover";
+        user.externalId = "johnsmith";
         return user;
     }
 
@@ -242,6 +244,9 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
         requestBody.name = user.name;
         requestBody.email = user.email;
         requestBody.address = user.address;
+        requestBody.twitterId = user.twitterHandle;
+        requestBody.description = user.description;
+        requestBody.uniqueExternalId = user.externalId;
         return requestBody;
     }
 }

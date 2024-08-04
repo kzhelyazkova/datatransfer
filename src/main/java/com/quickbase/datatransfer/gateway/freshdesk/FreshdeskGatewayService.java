@@ -141,6 +141,9 @@ public class FreshdeskGatewayService {
             contact.name = dataDTO.name;
             contact.address = dataDTO.address;
             contact.email = dataDTO.email;
+            contact.twitterId = dataDTO.twitterHandle;
+            contact.uniqueExternalId = dataDTO.externalId;
+            contact.description = dataDTO.description;
             return contact;
         }
 

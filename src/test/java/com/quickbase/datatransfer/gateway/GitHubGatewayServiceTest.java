@@ -47,9 +47,11 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
 
         GitHubUser gitHubUser = new GitHubUser();
         gitHubUser.name = "John Smith";
-        gitHubUser.company = "BlueSKy";
         gitHubUser.email = "jsmith@bluesky.com";
         gitHubUser.location = "Arizona, US";
+        gitHubUser.twitterUsername = "johnnys";
+        gitHubUser.bio = "A cat lover";
+        gitHubUser.login = "johnsmith";
 
         mockServer.stubFor(
                 WireMock.get(WireMock.urlPathEqualTo("/users/" + username))
@@ -64,9 +66,11 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
                 .assertNext(downloadedData -> {
                     assertNotNull(downloadedData);
                     assertEquals(gitHubUser.name, downloadedData.name);
-                    assertEquals(gitHubUser.company, downloadedData.company);
                     assertEquals(gitHubUser.email, downloadedData.email);
                     assertEquals(gitHubUser.location, downloadedData.address);
+                    assertEquals(gitHubUser.twitterUsername, downloadedData.twitterHandle);
+                    assertEquals(gitHubUser.bio, downloadedData.description);
+                    assertEquals(gitHubUser.login, downloadedData.externalId);
                 })
                 .verifyComplete();
     }

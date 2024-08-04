@@ -9,7 +9,9 @@ import lombok.ToString;
 @ToString
 public class UserDTO extends BaseDTO {
     public String name;
-    public String company;
     public String email;
+    public String twitterHandle;
     public String address;
+    public String externalId;
+    public String description;
 }

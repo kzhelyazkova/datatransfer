@@ -119,8 +119,10 @@ public class GitHubGatewayService {
             UserDTO result = new UserDTO();
             result.name = downloadedData.name;
             result.address = downloadedData.location;
-            result.company = downloadedData.company;
             result.email = downloadedData.email;
+            result.externalId = downloadedData.login;
+            result.description = downloadedData.bio;
+            result.twitterHandle = downloadedData.twitterUsername;
             return result;
         }
     }
