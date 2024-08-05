@@ -1,4 +1,4 @@
-package com.quickbase.datatransfer.gateway.github.model;
+package com.quickbase.datatransfer.gateway.freshdesk.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -8,11 +8,11 @@ import lombok.ToString;
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class GitHubUser {
+public class FreshdeskContactRequest {
     public String name;
+    public String address;
     public String email;
-    public String location;
-    public String login;
-    public String bio;
-    public String twitterUsername;
+    public String twitterId;
+    public String uniqueExternalId;
+    public String description;
 }

@@ -1,14 +1,18 @@
 package com.quickbase.datatransfer.gateway.freshdesk;
 
 import com.quickbase.datatransfer.common.ConfigPropertyProvider;
-import com.quickbase.datatransfer.dto.UserDTO;
-import com.quickbase.datatransfer.exception.*;
-import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContact;
-import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContactRequestBody;
+import com.quickbase.datatransfer.data.UserData;
+import com.quickbase.datatransfer.exception.AmbiguousDataException;
+import com.quickbase.datatransfer.exception.HttpRequestFailedException;
+import com.quickbase.datatransfer.exception.InvalidDataException;
+import com.quickbase.datatransfer.exception.MissingExternalSystemParamException;
+import com.quickbase.datatransfer.exception.UnauthorizedOperationException;
+import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContactResponse;
+import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContactRequest;
 import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskErrorResponse;
 import com.quickbase.datatransfer.gateway.util.WebUtils;
 import com.quickbase.datatransfer.common.DataType;
-import com.quickbase.datatransfer.service.DataTypeToDtoMatcher;
+import com.quickbase.datatransfer.service.DataTypeToDataClassMatcher;
 import com.quickbase.datatransfer.service.DataUploader;
 import com.quickbase.datatransfer.service.TransferrerTypeChecker;
 import lombok.extern.slf4j.Slf4j;
@@ -66,14 +70,14 @@ public class FreshdeskGatewayService {
     }
 
     @Service
-    public static class UserDataUploader extends FreshdeskDataProcessorBase implements DataUploader<UserDTO> {
+    public static class UserDataUploader extends FreshdeskDataProcessorBase implements DataUploader<UserData> {
         @Autowired
         protected UserDataUploader(ConfigPropertyProvider configPropertyProvider) {
             super(configPropertyProvider);
         }
 
         @Override
-        public Mono<Void> uploadData(Map<String, String> params, UserDTO data) {
+        public Mono<Void> uploadData(Map<String, String> params, UserData data) {
             if (data == null || Strings.isBlank(data.name)) {
                 return Mono.error(new InvalidDataException("Can't create/update Freshdesk contact: missing name in data for upload."));
             }
@@ -94,7 +98,7 @@ public class FreshdeskGatewayService {
                                             EXTERNAL_SYSTEM_NAME));
                                 }
 
-                                FreshdeskContactRequestBody contact = transformFromDTO(data);
+                                FreshdeskContactRequest contact = transformFromAppData(data);
 
                                 if (contacts != null && contacts.size() == 1) {
                                     return updateExistingContact(webClient, contact, contacts.get(0).id, data.name);
@@ -106,11 +110,11 @@ public class FreshdeskGatewayService {
 
         @Override
         public boolean dataTypeMatches(DataType dataType) {
-            return DataTypeToDtoMatcher.dataTypeMatchesDTO(dataType, UserDTO.class);
+            return DataTypeToDataClassMatcher.dataTypeMatchesDataClass(dataType, UserData.class);
         }
 
-        private Mono<List<FreshdeskContact>> searchContactsByName(WebClient webClient, String name) {
-            ParameterizedTypeReference<List<FreshdeskContact>> responseType =
+        private Mono<List<FreshdeskContactResponse>> searchContactsByName(WebClient webClient, String name) {
+            ParameterizedTypeReference<List<FreshdeskContactResponse>> responseType =
                     new ParameterizedTypeReference<>() {};
             String searchTerm = WebUtils.urlEncode(name);
 
@@ -136,18 +140,18 @@ public class FreshdeskGatewayService {
                             searchTerm, ex));
         }
 
-        private FreshdeskContactRequestBody transformFromDTO(UserDTO dataDTO) {
-            FreshdeskContactRequestBody contact = new FreshdeskContactRequestBody();
-            contact.name = dataDTO.name;
-            contact.address = dataDTO.address;
-            contact.email = dataDTO.email;
-            contact.twitterId = dataDTO.twitterHandle;
-            contact.uniqueExternalId = dataDTO.externalId;
-            contact.description = dataDTO.description;
+        private FreshdeskContactRequest transformFromAppData(UserData appData) {
+            FreshdeskContactRequest contact = new FreshdeskContactRequest();
+            contact.name = appData.name;
+            contact.address = appData.address;
+            contact.email = appData.email;
+            contact.twitterId = appData.twitterHandle;
+            contact.uniqueExternalId = appData.externalId;
+            contact.description = appData.description;
             return contact;
         }
 
-        private Mono<Void> updateExistingContact(WebClient webClient, FreshdeskContactRequestBody body, Long id, String name) {
+        private Mono<Void> updateExistingContact(WebClient webClient, FreshdeskContactRequest body, Long id, String name) {
             if (id == null) {
                 return Mono.error(new InvalidDataException("Freshdesk contact in search-by-name result has no ID. Can't update it."));
             }
@@ -166,7 +170,7 @@ public class FreshdeskGatewayService {
         }
 
 
-        private Mono<Void> createContact(WebClient webClient, FreshdeskContactRequestBody requestBody) {
+        private Mono<Void> createContact(WebClient webClient, FreshdeskContactRequest requestBody) {
             log.info("Creating Freshdesk contact with name '{}'...", requestBody.name);
 
             return webClient.post()
@@ -230,7 +234,7 @@ public class FreshdeskGatewayService {
         if (response == null) {
             return null;
         }
-        
+
         StringBuilder sb = new StringBuilder();
 
         if (response.description != null) {

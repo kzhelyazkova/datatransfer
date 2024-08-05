@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @AllArgsConstructor
 @ToString
-public class FreshdeskContact {
+public class FreshdeskContactResponse {
     public Long id;
     public String name;
 }

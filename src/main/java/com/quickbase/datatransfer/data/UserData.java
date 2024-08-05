@@ -1,4 +1,4 @@
-package com.quickbase.datatransfer.dto;
+package com.quickbase.datatransfer.data;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class UserDTO extends BaseDTO {
+public class UserData extends BaseData {
     public String name;
     public String email;
     public String twitterHandle;

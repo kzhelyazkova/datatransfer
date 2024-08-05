@@ -2,11 +2,11 @@ package com.quickbase.datatransfer.gateway;
 
 import com.github.tomakehurst.wiremock.common.Json;
 import com.quickbase.datatransfer.common.ConfigPropertyProvider;
-import com.quickbase.datatransfer.dto.UserDTO;
+import com.quickbase.datatransfer.data.UserData;
 import com.quickbase.datatransfer.exception.*;
 import com.quickbase.datatransfer.gateway.freshdesk.FreshdeskGatewayService.UserDataUploader;
-import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContact;
-import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContactRequestBody;
+import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContactResponse;
+import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskContactRequest;
 import com.quickbase.datatransfer.gateway.freshdesk.model.FreshdeskErrorResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
 
     @Test
     public void testCreateUser_success() {
-        UserDTO user = buildUser();
+        UserData user = buildUser();
 
         mockServer.stubFor(
                 get(urlPathEqualTo("/api/v2/contacts/autocomplete"))
@@ -72,7 +72,7 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
         StepVerifier.create(userDataUploader.uploadData(Map.of(DOMAIN_PARAM, "bluesky"), user))
                 .verifyComplete();
 
-        FreshdeskContactRequestBody expectedCreateRequestBody = buildRequestBody(user);
+        FreshdeskContactRequest expectedCreateRequestBody = buildRequestBody(user);
 
         mockServer.verify(
                 getRequestedFor(urlPathEqualTo("/api/v2/contacts/autocomplete")));
@@ -84,10 +84,10 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
 
     @Test
     public void testUpdateUser_success() {
-        UserDTO user = buildUser();
+        UserData user = buildUser();
         Long freshdeskContactId = 123L;
-        List<FreshdeskContact> searchResponseBody = new ArrayList<>(1);
-        searchResponseBody.add(new FreshdeskContact(freshdeskContactId, user.name));
+        List<FreshdeskContactResponse> searchResponseBody = new ArrayList<>(1);
+        searchResponseBody.add(new FreshdeskContactResponse(freshdeskContactId, user.name));
 
         mockServer.stubFor(
                 get(urlPathEqualTo("/api/v2/contacts/autocomplete"))
@@ -104,7 +104,7 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
         StepVerifier.create(userDataUploader.uploadData(Map.of(DOMAIN_PARAM, "bluesky"), user))
                 .verifyComplete();
 
-        FreshdeskContactRequestBody expectedUpdateRequestBody = buildRequestBody(user);
+        FreshdeskContactRequest expectedUpdateRequestBody = buildRequestBody(user);
 
         mockServer.verify(
                 getRequestedFor(urlPathEqualTo("/api/v2/contacts/autocomplete")));
@@ -130,7 +130,7 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
 
     @Test
     public void testUploadUserData_missingDomain() {
-        UserDTO user = buildUser();
+        UserData user = buildUser();
 
         Mono<Void> resultMono = userDataUploader.uploadData(Collections.emptyMap(), user);
 
@@ -147,7 +147,7 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
     @Test
     public void testUploadUserData_missingAuthToken() {
         when(configPropertyProvider.getConfigPropertyValue("FRESHDESK_TOKEN")).thenReturn(null);
-        UserDTO user = buildUser();
+        UserData user = buildUser();
 
         Mono<Void> resultMono = userDataUploader.uploadData(Map.of(DOMAIN_PARAM, "bluesky"), user);
 
@@ -163,10 +163,10 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
 
     @Test
     public void testUploadUserData_twoExistingContacts() {
-        UserDTO user = buildUser();
-        List<FreshdeskContact> searchResponseBody = new ArrayList<>(2);
-        searchResponseBody.add(new FreshdeskContact(123L, user.name));
-        searchResponseBody.add(new FreshdeskContact(456L, user.name));
+        UserData user = buildUser();
+        List<FreshdeskContactResponse> searchResponseBody = new ArrayList<>(2);
+        searchResponseBody.add(new FreshdeskContactResponse(123L, user.name));
+        searchResponseBody.add(new FreshdeskContactResponse(456L, user.name));
 
         mockServer.stubFor(
                 get(urlPathEqualTo("/api/v2/contacts/autocomplete"))
@@ -191,7 +191,7 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
 
     @Test
     public void testCreateUser_httpError() {
-        UserDTO user = buildUser();
+        UserData user = buildUser();
 
         mockServer.stubFor(
                 get(urlPathEqualTo("/api/v2/contacts/autocomplete"))
@@ -228,8 +228,8 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
                 .verify();
     }
 
-    private static UserDTO buildUser() {
-        UserDTO user = new UserDTO();
+    private static UserData buildUser() {
+        UserData user = new UserData();
         user.name = "John Smith";
         user.email = "jsmith@bluesky.com";
         user.address = "Arizona, US";
@@ -239,8 +239,8 @@ public class FreshdeskGatewayServiceTest extends GatewayTestBase {
         return user;
     }
 
-    private static FreshdeskContactRequestBody buildRequestBody(UserDTO user) {
-        FreshdeskContactRequestBody requestBody = new FreshdeskContactRequestBody();
+    private static FreshdeskContactRequest buildRequestBody(UserData user) {
+        FreshdeskContactRequest requestBody = new FreshdeskContactRequest();
         requestBody.name = user.name;
         requestBody.email = user.email;
         requestBody.address = user.address;

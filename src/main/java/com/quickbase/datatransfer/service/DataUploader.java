@@ -1,6 +1,6 @@
 package com.quickbase.datatransfer.service;
 
-import com.quickbase.datatransfer.dto.BaseDTO;
+import com.quickbase.datatransfer.data.BaseData;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -9,7 +9,7 @@ import java.util.Map;
  * This interface should be implemented for each external system type and data type to define the algorithm for
  * uploading data of this data type to the external system.
  */
-public interface DataUploader<T extends BaseDTO> extends TransferrerTypeChecker {
+public interface DataUploader<T extends BaseData> extends TransferrerTypeChecker {
     /**
      * Uploads data to external system.
      * <p/>

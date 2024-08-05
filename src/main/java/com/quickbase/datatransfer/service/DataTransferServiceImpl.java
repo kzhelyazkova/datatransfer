@@ -1,6 +1,6 @@
 package com.quickbase.datatransfer.service;
 
-import com.quickbase.datatransfer.dto.BaseDTO;
+import com.quickbase.datatransfer.data.BaseData;
 import com.quickbase.datatransfer.exception.UnsupportedOperationException;
 import com.quickbase.datatransfer.common.DataType;
 import lombok.extern.slf4j.Slf4j;
@@ -14,12 +14,12 @@ import java.util.Map;
 @Service
 @Slf4j
 public class DataTransferServiceImpl implements DataTransferService {
-    private final List<DataDownloader<? extends BaseDTO>> dataDownloaders;
-    private final List<DataUploader<? extends BaseDTO>> dataUploaders;
+    private final List<DataDownloader<? extends BaseData>> dataDownloaders;
+    private final List<DataUploader<? extends BaseData>> dataUploaders;
 
     @Autowired
-    public DataTransferServiceImpl(List<DataDownloader<? extends BaseDTO>> dataDownloaders,
-                               List<DataUploader<? extends BaseDTO>> dataUploaders) {
+    public DataTransferServiceImpl(List<DataDownloader<? extends BaseData>> dataDownloaders,
+                               List<DataUploader<? extends BaseData>> dataUploaders) {
         this.dataDownloaders = dataDownloaders;
         this.dataUploaders = dataUploaders;
         log.debug("Found the following data downloaders: {}", dataDownloaders);
@@ -33,8 +33,8 @@ public class DataTransferServiceImpl implements DataTransferService {
                     log.debug("Found suitable data downloader: {}", sourceSystemDataDownloader);
 
                     @SuppressWarnings("unchecked")
-                    DataUploader<BaseDTO> destSystemDataUploader =
-                            (DataUploader<BaseDTO>) findDataTransferrer(dataUploaders, destSystemType, dataType, false);
+                    DataUploader<BaseData> destSystemDataUploader =
+                            (DataUploader<BaseData>) findDataTransferrer(dataUploaders, destSystemType, dataType, false);
                     log.debug("Found suitable data uploader: {}", destSystemDataUploader);
 
                     return sourceSystemDataDownloader.downloadData(sourceParams)

@@ -1,14 +1,14 @@
 package com.quickbase.datatransfer.gateway.github;
 
 import com.quickbase.datatransfer.common.ConfigPropertyProvider;
-import com.quickbase.datatransfer.dto.UserDTO;
+import com.quickbase.datatransfer.data.UserData;
 import com.quickbase.datatransfer.exception.MissingExternalSystemParamException;
 import com.quickbase.datatransfer.exception.UnauthorizedOperationException;
-import com.quickbase.datatransfer.gateway.github.model.GitHubUser;
+import com.quickbase.datatransfer.gateway.github.model.GitHubUserResponse;
 import com.quickbase.datatransfer.gateway.util.WebUtils;
 import com.quickbase.datatransfer.common.DataType;
 import com.quickbase.datatransfer.service.DataDownloader;
-import com.quickbase.datatransfer.service.DataTypeToDtoMatcher;
+import com.quickbase.datatransfer.service.DataTypeToDataClassMatcher;
 import com.quickbase.datatransfer.service.TransferrerTypeChecker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +59,7 @@ public class GitHubGatewayService {
     }
 
     @Service
-    public static class UserDataDownloader extends GitHubDataProcessorBase implements DataDownloader<UserDTO> {
+    public static class UserDataDownloader extends GitHubDataProcessorBase implements DataDownloader<UserData> {
         public static final String USERNAME_PARAM = "username";
 
         @Autowired
@@ -68,17 +68,17 @@ public class GitHubGatewayService {
         }
 
         @Override
-        public Mono<UserDTO> downloadData(Map<String, String> params) {
+        public Mono<UserData> downloadData(Map<String, String> params) {
             return downloadUserData(params)
-                    .map(this::transformToDTO);
+                    .map(this::transformToAppData);
         }
 
         @Override
         public boolean dataTypeMatches(DataType dataType) {
-            return DataTypeToDtoMatcher.dataTypeMatchesDTO(dataType, UserDTO.class);
+            return DataTypeToDataClassMatcher.dataTypeMatchesDataClass(dataType, UserData.class);
         }
 
-        private Mono<GitHubUser> downloadUserData(Map<String, String> params) {
+        private Mono<GitHubUserResponse> downloadUserData(Map<String, String> params) {
             return Mono.fromCallable(() -> getUsername(params))
                     .flatMap(username -> {
                         String baseApiUrl = getApiBaseUrl();
@@ -97,7 +97,7 @@ public class GitHubGatewayService {
                                                                 username) :
                                                         String.format("Unexpected failure when getting GitHub user with username '%s'",
                                                                 username))
-                                        .flatMap(response -> response.bodyToMono(GitHubUser.class)))
+                                        .flatMap(response -> response.bodyToMono(GitHubUserResponse.class)))
                                 .doOnSuccess(__ -> log.info("Successfully obtained GitHub user with username '{}'",
                                         username))
                                 .doOnError(ex -> log.error("Getting GitHub user with username '{}' failed:",
@@ -115,15 +115,15 @@ public class GitHubGatewayService {
             return params.get(USERNAME_PARAM);
         }
 
-        private UserDTO transformToDTO(GitHubUser downloadedData) {
-            UserDTO result = new UserDTO();
-            result.name = downloadedData.name;
-            result.address = downloadedData.location;
-            result.email = downloadedData.email;
-            result.externalId = downloadedData.login;
-            result.description = downloadedData.bio;
-            result.twitterHandle = downloadedData.twitterUsername;
-            return result;
+        private UserData transformToAppData(GitHubUserResponse downloadedData) {
+            UserData appData = new UserData();
+            appData.name = downloadedData.name;
+            appData.address = downloadedData.location;
+            appData.email = downloadedData.email;
+            appData.externalId = downloadedData.login;
+            appData.description = downloadedData.bio;
+            appData.twitterHandle = downloadedData.twitterUsername;
+            return appData;
         }
     }
 

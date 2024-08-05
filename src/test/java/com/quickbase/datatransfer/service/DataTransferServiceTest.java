@@ -1,7 +1,7 @@
 package com.quickbase.datatransfer.service;
 
 import com.quickbase.datatransfer.common.DataType;
-import com.quickbase.datatransfer.dto.BaseDTO;
+import com.quickbase.datatransfer.data.BaseData;
 import com.quickbase.datatransfer.exception.UnsupportedOperationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,16 +27,16 @@ public class DataTransferServiceTest {
     private DataTransferService dataTransferService;
 
     @MockBean(name = "dataDownloader1")
-    private DataDownloader<BaseDTO> dataDownloader1;
+    private DataDownloader<BaseData> dataDownloader1;
 
     @MockBean(name = "dataDownloader2")
-    private DataDownloader<BaseDTO> dataDownloader2;
+    private DataDownloader<BaseData> dataDownloader2;
 
     @MockBean(name = "dataUploader1")
-    private DataUploader<BaseDTO> dataUploader1;
+    private DataUploader<BaseData> dataUploader1;
 
     @MockBean(name = "dataUploader2")
-    private DataUploader<BaseDTO> dataUploader2;
+    private DataUploader<BaseData> dataUploader2;
 
     private static final String sourceSystem = "source-system";
     private static final String destSystem = "dest-system";
@@ -69,7 +69,7 @@ public class DataTransferServiceTest {
                 .thenReturn(false);
 
         // mock download and upload operations
-        BaseDTO downloadedData = new BaseDTO();
+        BaseData downloadedData = new BaseData();
         when(dataDownloader1.downloadData(eq(sourceParams)))
                 .thenReturn(Mono.just(downloadedData));
         when(dataUploader1.uploadData(eq(destParams), any()))

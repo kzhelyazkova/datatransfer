@@ -25,10 +25,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = DataTransferCLI.class)
-public class DataTransferCLITest {
+@ContextConfiguration(classes = DataTransferCommands.class)
+public class DataTransferCommandsTest {
     @Autowired
-    private DataTransferCLI dataTransferCLI;
+    private DataTransferCommands dataTransferCommands;
 
     @MockBean
     private DataTransferService dataTransferService;
@@ -48,7 +48,7 @@ public class DataTransferCLITest {
         PrintWriter writer = mock(PrintWriter.class);
         when(terminal.writer()).thenReturn(writer);
 
-        dataTransferCLI.transferUser(sourceSystem, destSystem, sourceParams, destParams);
+        dataTransferCommands.transferUser(sourceSystem, destSystem, sourceParams, destParams);
 
         verify(dataTransferService, times(1))
                 .transferData(eq(sourceSystem), eq(destSystem), eq(DataType.USER),
@@ -63,7 +63,7 @@ public class DataTransferCLITest {
         String[] invalidSourceParams = {"username"};
 
         InvalidParamException ex = assertThrows(InvalidParamException.class, () ->
-                dataTransferCLI.transferUser(sourceSystem, destSystem, invalidSourceParams, destParams));
+                dataTransferCommands.transferUser(sourceSystem, destSystem, invalidSourceParams, destParams));
 
         assertEquals(invalidSourceParams[0], ex.param);
         assertEquals(String.format("Parameter '%s' does not match the pattern '%s'.", invalidSourceParams[0], "<key>=<value>"),
@@ -77,7 +77,7 @@ public class DataTransferCLITest {
         PrintWriter writer = mock(PrintWriter.class);
         when(terminal.writer()).thenReturn(writer);
 
-        assertThrows(RuntimeException.class, () -> dataTransferCLI.transferUser(sourceSystem, destSystem, sourceParams, destParams));
+        assertThrows(RuntimeException.class, () -> dataTransferCommands.transferUser(sourceSystem, destSystem, sourceParams, destParams));
 
         verify(dataTransferService, times(1))
                 .transferData(eq(sourceSystem), eq(destSystem), eq(DataType.USER),

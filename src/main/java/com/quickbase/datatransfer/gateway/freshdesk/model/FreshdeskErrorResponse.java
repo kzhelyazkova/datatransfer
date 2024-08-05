@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 
 import java.util.List;
 
+@AllArgsConstructor
 public class FreshdeskErrorResponse {
     public String description;
     public List<Error> errors;

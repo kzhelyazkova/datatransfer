@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.command.annotation.Command;
 import org.springframework.shell.command.annotation.Option;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
@@ -19,12 +18,12 @@ import static org.springframework.shell.command.CommandRegistration.*;
 
 @Component
 @Command(command = "transfer", group = "Data Transfer")
-public class DataTransferCLI extends CustomCommandExceptionResolver {
+public class DataTransferCommands extends CustomCommandExceptionResolver {
     private final Terminal terminal;
     private final DataTransferService dataTransferService;
 
     @Autowired
-    public DataTransferCLI(Terminal terminal, DataTransferService dataTransferService) {
+    public DataTransferCommands(Terminal terminal, DataTransferService dataTransferService) {
         this.terminal = terminal;
         this.dataTransferService = dataTransferService;
     }

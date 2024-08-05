@@ -9,12 +9,12 @@ import static org.mockito.Mockito.when;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.Json;
 import com.quickbase.datatransfer.common.ConfigPropertyProvider;
-import com.quickbase.datatransfer.dto.UserDTO;
+import com.quickbase.datatransfer.data.UserData;
 import com.quickbase.datatransfer.exception.HttpRequestFailedException;
 import com.quickbase.datatransfer.exception.MissingExternalSystemParamException;
 import com.quickbase.datatransfer.exception.UnauthorizedOperationException;
 import com.quickbase.datatransfer.gateway.github.GitHubGatewayService.UserDataDownloader;
-import com.quickbase.datatransfer.gateway.github.model.GitHubUser;
+import com.quickbase.datatransfer.gateway.github.model.GitHubUserResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -45,7 +45,7 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
     public void testDownloadUserData_success() {
         String username = "jsmith";
 
-        GitHubUser gitHubUser = new GitHubUser();
+        GitHubUserResponse gitHubUser = new GitHubUserResponse();
         gitHubUser.name = "John Smith";
         gitHubUser.email = "jsmith@bluesky.com";
         gitHubUser.location = "Arizona, US";
@@ -60,7 +60,7 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
                                 .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                                 .withBody(Json.write(gitHubUser))));
 
-        Mono<UserDTO> resultMono = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, username));
+        Mono<UserData> resultMono = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, username));
 
         StepVerifier.create(resultMono)
                 .assertNext(downloadedData -> {
@@ -77,7 +77,7 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
 
     @Test
     public void testDownloadUserData_missingUsername() {
-        Mono<UserDTO> resultMono = userDataDownloader.downloadData(Collections.emptyMap());
+        Mono<UserData> resultMono = userDataDownloader.downloadData(Collections.emptyMap());
 
         StepVerifier.create(resultMono)
                 .expectErrorMatches(throwable -> {
@@ -93,7 +93,7 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
     public void testDownloadUserData_missingAuthToken() {
         when(configPropertyProvider.getConfigPropertyValue("GITHUB_TOKEN")).thenReturn(null);
 
-        Mono<UserDTO> resultMono = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, "jsmith"));
+        Mono<UserData> resultMono = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, "jsmith"));
 
         StepVerifier.create(resultMono)
                 .expectErrorMatches(throwable -> {
@@ -114,7 +114,7 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
                         .willReturn(WireMock.aResponse()
                                 .withStatus(HttpStatus.NOT_FOUND.value())));
 
-        Mono<UserDTO> resultMono = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, username));
+        Mono<UserData> resultMono = userDataDownloader.downloadData(Map.of(USERNAME_PARAM, username));
 
         StepVerifier.create(resultMono)
                 .expectErrorMatches(throwable -> {
