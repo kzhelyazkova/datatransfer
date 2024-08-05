@@ -113,6 +113,12 @@ public class FreshdeskGatewayService {
             return DataTypeToDataClassMatcher.dataTypeMatchesDataClass(dataType, UserData.class);
         }
 
+        /*
+         * Searching for contacts by name since it's the only mandatory attribute when creating a contact. The only
+         * other mandatory attribute is one of the following: email, phone, mobile, twitter_id, unique_external_id,
+         * so we can't count on any of them to search for the user. Also, name is not unique, so we might get more
+         * than one result in the response. More info: https://developers.freshdesk.com/api/#create_contact
+         */
         private Mono<List<FreshdeskContactResponse>> searchContactsByName(WebClient webClient, String name) {
             ParameterizedTypeReference<List<FreshdeskContactResponse>> responseType =
                     new ParameterizedTypeReference<>() {};

@@ -20,7 +20,7 @@ import static reactor.util.retry.Retry.backoff;
 @Slf4j
 public class WebUtils {
     // in production code, these retry settings should be configurable
-    public static final long RETRY_MAX_ATTEMPTS = 2;
+    public static final long RETRY_MAX_ATTEMPTS = 5;
     public static final Duration RETRY_MIN_BACKOFF = Duration.ofSeconds(2);
     public static final List<HttpStatus> RETRYABLE_HTTP_STATUSES = List.of(
             HttpStatus.REQUEST_TIMEOUT,
