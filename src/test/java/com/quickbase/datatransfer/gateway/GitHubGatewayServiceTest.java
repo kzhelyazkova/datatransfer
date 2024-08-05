@@ -121,7 +121,7 @@ public class GitHubGatewayServiceTest extends GatewayTestBase {
                     if (throwable instanceof HttpRequestFailedException ex) {
                         return EXTERNAL_SYSTEM_NAME.equals(ex.externalSystemName)
                                 && HttpStatus.NOT_FOUND.value() == ex.httpStatusCode.value()
-                                && String.format("GitHub user with username '%s' not found.", username).equals(ex.getMessage());
+                                && String.format("GitHub user with username '%s' does not exist.", username).equals(ex.getMessage());
                     }
                     return false;
                 })

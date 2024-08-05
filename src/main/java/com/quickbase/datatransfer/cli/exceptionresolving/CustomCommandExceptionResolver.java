@@ -61,11 +61,4 @@ public class CustomCommandExceptionResolver {
                 "Operation is not supported. %s\n", ex.getMessage()
         ), 1);
     }
-
-    @ExceptionResolver()
-    CommandHandlingResult errorHandler(RuntimeException ex) {
-        return CommandHandlingResult.of(String.format(
-                "Unexpected error occurred. %s\n", ex.getMessage()
-        ), 1);
-    }
 }

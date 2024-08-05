@@ -93,7 +93,7 @@ public class GitHubGatewayService {
                                                 clientResponse,
                                                 EXTERNAL_SYSTEM_NAME,
                                                 httpStatusCode -> httpStatusCode.value() == HttpStatus.NOT_FOUND.value() ?
-                                                        String.format("GitHub user with username '%s' not found.",
+                                                        String.format("GitHub user with username '%s' does not exist.",
                                                                 username) :
                                                         String.format("Unexpected failure when getting GitHub user with username '%s'",
                                                                 username))

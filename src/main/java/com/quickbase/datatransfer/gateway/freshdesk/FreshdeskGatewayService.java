@@ -87,7 +87,7 @@ public class FreshdeskGatewayService {
                     })
                     .flatMap(webClient -> searchContactsByName(webClient, data.name)
                             .flatMap(contacts -> {
-                                if (contacts.size() > 1) {
+                                if (contacts != null && contacts.size() > 1) {
                                     return Mono.error(new AmbiguousDataException(
                                             String.format("Found more than one Freshdesk contact with name '%s'. " +
                                                     "Can't define which contact to update.", data.name),
@@ -96,7 +96,7 @@ public class FreshdeskGatewayService {
 
                                 FreshdeskContactRequestBody contact = transformFromDTO(data);
 
-                                if (contacts.size() == 1) {
+                                if (contacts != null && contacts.size() == 1) {
                                     return updateExistingContact(webClient, contact, contacts.get(0).id, data.name);
                                 }
 
@@ -125,7 +125,7 @@ public class FreshdeskGatewayService {
                             .filter(contact -> name.equals(contact.name))
                             .collect(Collectors.toList()))
                     .doOnSuccess(contacts -> {
-                        if (!contacts.isEmpty()) {
+                        if (contacts != null && !contacts.isEmpty()) {
                             log.info("Found {} Freshdesk contact(s) matching name '{}': {}",
                                     contacts.size(), name, contacts);
                         } else {
@@ -207,6 +207,11 @@ public class FreshdeskGatewayService {
 
         if (httpStatus.isError()) {
             return response.bodyToMono(FreshdeskErrorResponse.class)
+                    .switchIfEmpty(Mono.error(new HttpRequestFailedException(
+                            "No info about the error from Freshdesk",
+                            EXTERNAL_SYSTEM_NAME,
+                            httpStatus
+                    )))
                     .flatMap(errorResponse -> {
                         String humanReadableMsg = convertToHumanReadableMessage(errorResponse);
 
@@ -222,6 +227,10 @@ public class FreshdeskGatewayService {
     }
 
     private static String convertToHumanReadableMessage(FreshdeskErrorResponse response) {
+        if (response == null) {
+            return null;
+        }
+        
         StringBuilder sb = new StringBuilder();
 
         if (response.description != null) {

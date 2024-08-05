@@ -41,10 +41,12 @@ public class DataTransferCLI extends CustomCommandExceptionResolver {
                     description = "External system to which data will be transferred. Currently supported: Freshdesk")
             String destinationSystem,
             @Option(longNames = {"source-params"}, shortNames = {'p'}, arity = OptionArity.ONE_OR_MORE,
-                    description = "Parameters identifying the user for which data will be retrieved from the source system")
+                    description = "Parameters in a <key>=<value> format identifying the user for which data will be " +
+                            "retrieved from the source system. For example, GitHub requires username")
             String[] sourceParams,
             @Option(longNames = {"destination-params"}, shortNames = {'t'}, arity = OptionArity.ONE_OR_MORE,
-                    description = "Parameters identifying where to upload the user data in the destination system")
+                    description = "Parameters in a <key>=<value> format identifying where to upload the user data in " +
+                            "the destination system. For example, Freshdesk requires domain")
             String[] destinationParams) {
         Map<String, String> sourceParamsMap = CommandUtils.convertArrayParamsToMap(sourceParams);
         Map<String, String> destParamsMap = CommandUtils.convertArrayParamsToMap(destinationParams);
