@@ -1,10 +1,12 @@
 package com.quickbase.datatransfer.gateway.freshdesk.model;
 
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @AllArgsConstructor
+@NoArgsConstructor
 public class FreshdeskErrorResponse {
     public String description;
     public List<Error> errors;

@@ -124,6 +124,7 @@ public class FreshdeskGatewayService {
                     .uri(SEARCH_CONTACTS_API_PATH + searchTerm)
                     .exchangeToMono(clientResponse -> handleHttpError(clientResponse)
                             .flatMap(response -> response.bodyToMono(responseType)))
+                    .retryWhen(WebUtils.retryWithDefaultSettings())
                     // result includes all contacts whose name starts with the search term, but we only care about exact matches
                     .map(contacts -> contacts.stream()
                             .filter(contact -> name.equals(contact.name))
@@ -163,6 +164,7 @@ public class FreshdeskGatewayService {
                     .bodyValue(body)
                     .exchangeToMono(clientResponse -> handleHttpError(clientResponse)
                             .flatMap(response -> response.bodyToMono(Void.class)))
+                    .retryWhen(WebUtils.retryWithDefaultSettings())
                     .doOnSuccess(__ -> log.info("Successfully updated Freshdesk contact with name '{}' and id '{}'",
                             name, id))
                     .doOnError(ex -> log.error("Updating Freshdesk contact with name '{}' and id '{}' failed:",
@@ -178,6 +180,7 @@ public class FreshdeskGatewayService {
                     .bodyValue(requestBody)
                     .exchangeToMono(clientResponse -> handleHttpError(clientResponse)
                             .flatMap(response -> response.bodyToMono(Void.class)))
+                    .retryWhen(WebUtils.retryWithDefaultSettings())
                     .doOnSuccess(__ -> log.info("Successfully created Freshdesk contact with name '{}'",
                             requestBody.name))
                     .doOnError(ex -> log.error("Creating Freshdesk contact with name '{}' failed:",

@@ -98,6 +98,7 @@ public class GitHubGatewayService {
                                                         String.format("Unexpected failure when getting GitHub user with username '%s'",
                                                                 username))
                                         .flatMap(response -> response.bodyToMono(GitHubUserResponse.class)))
+                                .retryWhen(WebUtils.retryWithDefaultSettings())
                                 .doOnSuccess(__ -> log.info("Successfully obtained GitHub user with username '{}'",
                                         username))
                                 .doOnError(ex -> log.error("Getting GitHub user with username '{}' failed:",
